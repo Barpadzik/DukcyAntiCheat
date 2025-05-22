@@ -26,7 +26,7 @@ public class ViolationAlerts {
     }
 
     public int reportViolation(String playerName, String checkType) {
-        if (!isValidInput(playerName, checkType)) {
+        if (isValidInput(playerName, checkType)) {
             return 0;
         }
 
@@ -40,7 +40,7 @@ public class ViolationAlerts {
     }
 
     public void executePunishment(String playerName, String check, String command) {
-        if (!isValidInput(playerName, check) || command == null || command.trim().isEmpty()) {
+        if (isValidInput(playerName, check) || command == null || command.trim().isEmpty()) {
             plugin.getLogger().warning("Invalid punishment parameters");
             return;
         }
@@ -64,7 +64,7 @@ public class ViolationAlerts {
     }
 
     public int getViolationCount(String playerName, String checkType) {
-        if (!isValidInput(playerName, checkType)) {
+        if (isValidInput(playerName, checkType)) {
             return 0;
         }
 
@@ -120,15 +120,15 @@ public class ViolationAlerts {
     private boolean isValidInput(String playerName, String checkType) {
         if (playerName == null || playerName.trim().isEmpty()) {
             plugin.getLogger().warning("Attempted operation with null/empty player name");
-            return false;
+            return true;
         }
 
         if (checkType == null || checkType.trim().isEmpty()) {
             plugin.getLogger().warning("Attempted operation with null/empty check type");
-            return false;
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     private void sendAlerts(String playerName, String checkType, int count) {
