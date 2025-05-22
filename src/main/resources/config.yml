@@ -1,0 +1,190 @@
+# === DUCKY ANTICHEAT CONFIGURATION ===
+
+# Time after which violations reset for the player
+# How it works:
+# Player is reported let's say 2 times for check ElytraAimA
+# After the default 300 seconds or 5 minutes his violations will reset to 0
+
+alert-timeout: 300
+
+# === AUTO TOTEM A ===
+auto-totem-a:
+  enabled: true
+  min-delay: 150 # minimum allowed swap interval in ms
+  tick-interval: 3
+  max-ping: -1
+  max-alerts: 5
+  command: "kick %player% Too fast totem swap (AutoTotemA)"
+  debug: false
+
+# === ELYTRA AIM A ===
+elytra-aim-a:
+  enabled: true
+  cancel-event: true
+  max-firework-delay: 200
+  max-alerts: 5
+  command: "kick %player% Cheating with Elytra (ElytraAimA)"
+  debug: false
+
+# === ELYTRA CRITICALS A ===
+elytra-criticals-a:
+  enabled: true
+  cancel-event: true
+  critical-hits-required: 3
+  timeframe: 2000 # in milliseconds
+  max-alerts: 5
+  command: "kick %player% Cheating with Elytra (ElytraCriticalsA)"
+  debug: false
+
+# === THRU BLOCKS A ===
+thru-blocks-a:
+  enabled: true
+  cancel-event: true
+  max-distance: 1.0 # Max allowed distance from clear line of sight
+  max-alerts: 4
+  command: "kick %player% Hitting through blocks (ThruBlocksA)"
+  debug: false
+
+# === NO WEB A ===
+no-web-a:
+  enabled: true
+  cancel-event: true
+  min-web-vertical-slow: 0.25
+  min-web-horizontal-slow: 0.1
+  jump-violation-threshold: 0.42
+  max-alerts: 3
+  command: "kick %player% Suspicious movement in cobwebs (NoWebA)"
+  debug: false
+
+# === NO SLOW ALL CHECKS ===
+no-slowdown-max-distance: 1.0
+
+# === NO SLOW A ===
+no-slowdown-a:
+  enabled: true
+  cancel-event: false
+  max-eating-speed: 0.20
+  ignored-speeds:
+    - 0.5072
+    - 0.3024
+    - 0.2933
+    - 0.4822
+    - 0.5013
+    - 0.5014
+  max-alerts: 10
+  command: "kick %player% Player was walking too fast while eating (NoSlowDownA)"
+  debug: false
+
+# === NO SLOW B ===
+no-slowdown-b:
+  enabled: true
+  cancel-event: false
+  max-bow-speed: 0.20
+  ignored-speeds:
+    - 0.5072
+    - 0.3024
+    - 0.2933
+    - 0.4822
+    - 0.5013
+    - 0.5014
+  max-alerts: 10
+  command: "kick %player% Player was walking too fast with a drawn bow (NoSlowDownB)"
+  debug: false
+
+# === NO SLOW C ===
+no-slowdown-c:
+  enabled: true
+  cancel-event: false
+  max-speed: 0.20
+  ignored-speeds:
+    - 0.5072
+    - 0.3024
+    - 0.2933
+    - 0.4822
+    - 0.5013
+    - 0.5014
+  max-alerts: 10
+  command: "kick %player% Player walked too fast while drawing the crossbow (NoSlowDownC)"
+  debug: false
+
+# === NO SLOW D ===
+no-slowdown-d:
+  enabled: true
+  cancel-event: false
+  max-speed: 0.20
+  ignored-speeds:
+    - 0.5072
+    - 0.3024
+    - 0.2933
+    - 0.4822
+    - 0.5013
+    - 0.5014
+  max-alerts: 10
+  command: "kick %player% Player was walking too fast while holding a shield (NoSlowDownD)"
+  debug: false
+
+# === NO SLOW E ===
+no-slowdown-e:
+  enabled: true
+  max-speed: 0.170
+  max-alerts: 5
+  command: "kick %player% Player was walking too fast on honey block (NoSlowDownE)"
+  debug: false
+
+# === NO SLOW F ===
+no-slowdown-f:
+  enabled: true
+  max-speed: 0.170
+  max-alerts: 5
+  command: "kick %player% Player was walking too fast on soul sand (NoSlowDownF)"
+  debug: false
+
+# === NO SLOW G ===
+no-slowdown-g:
+  enabled: true
+  max-speed: 0.135
+  max-alerts: 10
+  command: "kick %player% Player was walking too fast while sneaking (NoSlowDownG)"
+  debug: false
+
+# === INVALID PLACE A ===
+invalid-place-a:
+  enabled: true
+  cancel-event: true
+  max-angle: 50 # Maximum angle allowed between a looking direction and placed block
+  max-alerts: 3
+  command: "kick %player% Invalid block placement (InvalidPlaceA)"
+  debug: false
+
+# === FAST PLACE A ===
+fast-place:
+  enabled: true
+  cancel-event: true
+  max-per-tick: 4
+  max-alerts: 3
+  command: "kick %player% Too fast block placement (FastPlaceA)"
+  debug: false
+
+# === DUCKYANTICHEAT MESSAGES ===
+
+# === VIOLATION ALERTS ===
+alert-message: "&d&lDuckyAC &8» &fPlayer &7»&f %player% &7»&6 %check% &7(&c%vl%VL&7)"
+
+# === DISCORD TEMPLATES ===
+discord:
+  enabled: false
+  discord-webhook-url: "https://discord.com/api/webhooks/your-webhook-id"
+  username: "DuckyAntiCheat"
+  avatar-url: "https://i.imgur.com/wPfoYdI.png"
+  violation-message-template: "**AntiCheatSystem**\nPlayer: **%player%**\nCheck: **%check%**\nViolation: **%vl%**"
+  punishment-message-template: "**Punishment Executed**\nPlayer: **%player%**\nCommand: `%command%`"
+
+# === MISC ===
+no-permission: "&d&lDuckyAC &8» &cNo Permission!"
+incorrect-usage: '&d&lDuckyAC &8» &cUsage: /duckyac reload'
+update-available: "&d&lDuckyAC &8» &eA new version is available: &c%version%"
+update-download: "&d&lDuckyAC &8» &eDownload: &a%url%"
+update-check-failed: "&d&lDuckyAC &8» &cCould not check for updates."
+player-only: "&d&lDuckyAC &8» &cOnly Players can use this command."
+config-reloaded: '&d&lDuckyAC &8» &aConfiguration reloaded.'
+plugin-reloaded: '&d&lDuckyAC &8» &aPlugin successfully reloaded.'
