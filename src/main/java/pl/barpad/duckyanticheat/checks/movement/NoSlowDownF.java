@@ -43,9 +43,12 @@ public class NoSlowDownF implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        if (player.isFlying()) return;
+        if (player.hasPermission("duckyac.bypass") && player.hasPermission("duckyac.*")
+                && player.hasPermission("duckyac.bypass.noslowdown-f") && player.hasPermission("duckyac.bypass.noslowdown.*")) {
+            return;
+        }
 
-        if (hasBypassPermission(player)) return;
+        if (player.isFlying()) return;
 
         boolean isCurrentlyGliding = player.isGliding();
         boolean wasPreviouslyGliding = wasGliding.getOrDefault(uuid, false);
@@ -118,13 +121,6 @@ public class NoSlowDownF implements Listener {
 
             lastCheck.put(uuid, now);
         }
-    }
-
-    private boolean hasBypassPermission(Player player) {
-        return player.hasPermission("duckyac.bypass")
-                && player.hasPermission("duckyac.*")
-                && player.hasPermission("duckyac.bypass.noslowdown-f")
-                && player.hasPermission("duckyac.bypass.noslowdown.*");
     }
 
     private int getEnchantmentLevel(ItemStack item, Enchantment enchantment) {

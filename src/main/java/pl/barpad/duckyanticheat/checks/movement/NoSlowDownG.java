@@ -47,7 +47,7 @@ public class NoSlowDownG implements Listener {
         UUID uuid = player.getUniqueId();
 
         if (player.hasPermission("duckyac.bypass") && player.hasPermission("duckyac.*")
-                && player.hasPermission("duckyac.bypass.noslowdown-f") && player.hasPermission("duckyac.bypass.noslowdown.*")) {
+                && player.hasPermission("duckyac.bypass.noslowdown-g") && player.hasPermission("duckyac.bypass.noslowdown.*")) {
             return;
         }
 

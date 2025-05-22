@@ -58,17 +58,15 @@ public class NoSlowDownC implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        // Wczesny return - wstępne sprawdzenie konfiguracji i stanu gracza
         if (!config.isNoSlowDownCEnabled()) return;
         if (!player.isOnline()) return;
         if (player.isFlying()) return;
 
-        if (player.hasPermission("duckyac.bypass") && player.hasPermission("duckyac.*") &&
-                player.hasPermission("duckyac.bypass.noslowdown-c") && player.hasPermission("duckyac.bypass.noslowdown.*")) {
+        if (player.hasPermission("duckyac.bypass") || player.hasPermission("duckyac.*") ||
+                player.hasPermission("duckyac.bypass.noslowdown-c") || player.hasPermission("duckyac.bypass.noslowdown.*")) {
             return;
         }
 
-        // Sprawdzenie czy gracz przed chwilą nie zakończył latania elytrą
         boolean isCurrentlyGliding = player.isGliding();
         boolean wasPreviouslyGliding = wasGliding.getOrDefault(uuid, false);
         if (!isCurrentlyGliding && wasPreviouslyGliding) {
@@ -80,7 +78,6 @@ public class NoSlowDownC implements Listener {
             return;
         }
 
-        // Sprawdzenie czy gracz przed chwilą nie zakończył latania kreatywnego
         boolean isCurrentlyFlying = player.isFlying();
         boolean wasPreviouslyFlying = wasFlying.getOrDefault(uuid, false);
         if (!isCurrentlyFlying && wasPreviouslyFlying) {
@@ -92,11 +89,9 @@ public class NoSlowDownC implements Listener {
             return;
         }
 
-        // Sprawdzenie, czy gracz ładuje kuszę
         ItemStack item = player.getInventory().getItemInMainHand();
         if (item.getType() != Material.CROSSBOW || !player.isHandRaised()) return;
 
-        // Obliczenie prędkości ruchu gracza
         Location current = player.getLocation();
         Location previous = lastLocations.getOrDefault(uuid, current);
         double distance = current.toVector().distance(previous.toVector());
@@ -104,7 +99,6 @@ public class NoSlowDownC implements Listener {
 
         if (Math.abs(current.getY() - previous.getY()) > 0.001) return;
 
-        // Pobranie danych z konfiguracji
         double adjustedMaxSpeed = config.getNoSlowDownCMaxSpeed();
         double maxIgnoreSpeed = config.getNoSlowDownCMaxIgnoreSpeed();
         boolean debugMode = config.isNoSlowDownCDebugMode();
@@ -112,28 +106,23 @@ public class NoSlowDownC implements Listener {
         int maxAlerts = config.getMaxNoSlowDownCAlerts();
         String punishCommand = config.getNoSlowDownCCommand();
 
-        // Uwzględnienie eliksiru szybkości
         PotionEffect speed = player.getPotionEffect(PotionEffectType.SPEED);
         if (speed != null) {
             int level = speed.getAmplifier() + 1;
             adjustedMaxSpeed *= (1.0 + level * 0.2);
         }
 
-        // Ignorowanie lodu pod graczem
         Material belowType = player.getLocation().subtract(0, 1, 0).getBlock().getType();
         if (belowType == Material.ICE || belowType == Material.PACKED_ICE || belowType == Material.BLUE_ICE) return;
 
-        // Ignorowanie specyficznych wartości z konfiguracji
         for (double ignored : ignoredSpeedValues) {
             if (Math.abs(distance - ignored) < EPSILON) {
                 return;
             }
         }
 
-        // Ignorowanie, jeśli prędkość większa niż maksymalna możliwa do monitorowania
         if (distance > maxIgnoreSpeed) return;
 
-        // Właściwa detekcja i reakcja
         if (distance > adjustedMaxSpeed) {
             violationAlerts.reportViolation(player.getName(), "NoSlowDownC");
             int vl = violationAlerts.getViolationCount(player.getName(), "NoSlowDownC");

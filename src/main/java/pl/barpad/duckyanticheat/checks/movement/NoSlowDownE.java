@@ -43,7 +43,12 @@ public class NoSlowDownE implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        if (player.isFlying() || bypass(player)) return;
+        if (player.hasPermission("duckyac.bypass") && player.hasPermission("duckyac.*")
+                && player.hasPermission("duckyac.bypass.noslowdown-e") && player.hasPermission("duckyac.bypass.noslowdown.*")) {
+            return;
+        }
+
+        if (player.isFlying()) return;
 
         if (recentElytraFlight(player, uuid) || recentPlayerFlight(player, uuid)) return;
 
@@ -84,13 +89,6 @@ public class NoSlowDownE implements Listener {
 
             lastCheck.put(uuid, now);
         }
-    }
-
-    private boolean bypass(Player player) {
-        return player.hasPermission("duckyac.bypass")
-                || player.hasPermission("duckyac.*")
-                || player.hasPermission("duckyac.bypass.noslowdown-e")
-                || player.hasPermission("duckyac.bypass.noslowdown.*");
     }
 
     private boolean recentElytraFlight(Player player, UUID uuid) {
