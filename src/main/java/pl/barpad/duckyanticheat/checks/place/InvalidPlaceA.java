@@ -14,8 +14,7 @@ import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class InvalidPlaceA implements Listener {
 
@@ -29,7 +28,7 @@ public class InvalidPlaceA implements Listener {
     private final DiscordHook discordHook;
 
     // Map to count consecutive invalid place attempts per player
-    private final Map<String, Integer> placeViolations = new HashMap<>();
+    private final ConcurrentHashMap<String, Integer> placeViolations = new ConcurrentHashMap<>();
 
     /**
      * Constructor registers the event listener and initializes dependencies.

@@ -11,8 +11,7 @@ import pl.barpad.duckyanticheat.utils.DiscordHook;
 import pl.barpad.duckyanticheat.Main;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ElytraCriticalsA implements Listener {
 
@@ -22,11 +21,11 @@ public class ElytraCriticalsA implements Listener {
     private final ConfigManager config;
 
     // Tracks consecutive critical hits per player
-    private final Map<String, Integer> playerCriticalHits = new HashMap<>();
+    private final ConcurrentHashMap<String, Integer> playerCriticalHits = new ConcurrentHashMap<>();
     // Tracks last critical hit timestamp per player for timeframe checks
-    private final Map<String, Long> lastHitTime = new HashMap<>();
+    private final ConcurrentHashMap<String, Long> lastHitTime = new ConcurrentHashMap<>();
     // Tracks how many times the player has triggered violation reports (pending)
-    private final Map<String, Integer> pendingViolations = new HashMap<>();
+    private final ConcurrentHashMap<String, Integer> pendingViolations = new ConcurrentHashMap<>();
 
     /**
      * Constructor initializes references and registers event listener.

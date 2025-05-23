@@ -13,9 +13,8 @@ import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NoWebA implements Listener {
 
@@ -23,7 +22,7 @@ public class NoWebA implements Listener {
     private final ConfigManager config;
     private final DiscordHook discordHook;
 
-    private final Map<String, Integer> webViolations = new HashMap<>();
+    private final ConcurrentHashMap<String, Integer> webViolations = new ConcurrentHashMap<>();
 
     public NoWebA(Main plugin, ViolationAlerts violationAlerts, DiscordHook discordHook, ConfigManager config) {
         this.violationAlerts = violationAlerts;

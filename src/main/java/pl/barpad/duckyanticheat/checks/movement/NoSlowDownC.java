@@ -17,7 +17,9 @@ import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NoSlowDownC implements Listener {
 
@@ -28,12 +30,12 @@ public class NoSlowDownC implements Listener {
     private static final double EPSILON = 0.0001;
 
     private final List<Double> ignoredSpeeds;
-    private final Map<UUID, Location> lastLocations = new HashMap<>();
-    private final Map<UUID, Long> ignoreUntil = new HashMap<>();
-    private final Map<UUID, Long> lastElytra = new HashMap<>();
-    private final Map<UUID, Long> lastFlight = new HashMap<>();
-    private final Map<UUID, Boolean> wasGliding = new HashMap<>();
-    private final Map<UUID, Boolean> wasFlying = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Location> lastLocations = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> ignoreUntil = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> lastElytra = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> lastFlight = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
 
     public NoSlowDownC(Main plugin, ViolationAlerts alerts, DiscordHook discord, ConfigManager config) {
         this.alerts = alerts;

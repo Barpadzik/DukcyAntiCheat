@@ -11,8 +11,8 @@ import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
-import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class FastPlaceA implements Listener {
 
@@ -26,7 +26,7 @@ public class FastPlaceA implements Listener {
     private final DiscordHook discordHook;
 
     // Map storing number of blocks placed per player within the current second
-    private final HashMap<UUID, Integer> placeCounts = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Integer> placeCounts = new ConcurrentHashMap<>();
 
     /**
      * Constructor registers the event listener and schedules the task

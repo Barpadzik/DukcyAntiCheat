@@ -34,7 +34,7 @@ public class ThruBlocksA implements Listener {
     }
 
     /**
-     * Listens for player-vs-player damage events.
+     * Listens for player-vs.-player damage events.
      * Detects if the attacker hits through blocks illegally.
      */
     @EventHandler

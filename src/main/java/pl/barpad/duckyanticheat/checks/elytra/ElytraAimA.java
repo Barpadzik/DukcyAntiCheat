@@ -14,8 +14,8 @@ import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
-import java.util.HashMap;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ElytraAimA implements Listener {
 
@@ -24,7 +24,7 @@ public class ElytraAimA implements Listener {
     private final DiscordHook discordHook;
 
     // Stores the timestamp of the last firework usage per player UUID
-    private final HashMap<UUID, Long> fireworkUsageTimes = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Long> fireworkUsageTimes = new ConcurrentHashMap<>();
 
     /**
      * Constructor registers this listener and initializes dependencies.

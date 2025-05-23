@@ -16,6 +16,7 @@ import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NoSlowDownG implements Listener {
 
@@ -24,22 +25,22 @@ public class NoSlowDownG implements Listener {
     private final ConfigManager config;
 
     // Timestamp of last check per player to throttle violation reports
-    private final Map<UUID, Long> lastCheck = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Long> lastCheck = new ConcurrentHashMap<>();
 
     // Last known location per player to calculate speed
-    private final Map<UUID, Location> lastLocations = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Location> lastLocations = new ConcurrentHashMap<>();
 
     // Track last time player stopped elytra gliding to avoid false positives
-    private final Map<UUID, Long> lastElytraFlight = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Long> lastElytraFlight = new ConcurrentHashMap<>();
 
     // Track last time player stopped flying for similar reasons
-    private final Map<UUID, Long> lastPlayerFlight = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Long> lastPlayerFlight = new ConcurrentHashMap<>();
 
     // Keep previous gliding state to detect when player stops gliding
-    private final Map<UUID, Boolean> wasGliding = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
 
     // Keep previous flying state to detect when player stops flying
-    private final Map<UUID, Boolean> wasFlying = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
 
     // Blocks to ignore speed checks on (ice variants)
     private final Set<Material> ignoredBlocks = EnumSet.of(

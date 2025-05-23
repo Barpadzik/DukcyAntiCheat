@@ -17,10 +17,9 @@ import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class NoSlowDownA implements Listener {
 
@@ -28,13 +27,13 @@ public class NoSlowDownA implements Listener {
     private final DiscordHook discordHook;
     private final ConfigManager config;
 
-    private final Map<UUID, Location> lastLocations = new HashMap<>();
-    private final Map<UUID, Long> ignoreUntil = new HashMap<>();
-    private final Map<UUID, Long> immunityUntil = new HashMap<>();
-    private final Map<UUID, Long> lastElytraFlight = new HashMap<>();
-    private final Map<UUID, Long> lastPlayerFlight = new HashMap<>();
-    private final Map<UUID, Boolean> wasGliding = new HashMap<>();
-    private final Map<UUID, Boolean> wasFlying = new HashMap<>();
+    private final ConcurrentHashMap<UUID, Location> lastLocations = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> ignoreUntil = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> immunityUntil = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> lastElytraFlight = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> lastPlayerFlight = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
 
     private final List<Double> ignoredSpeedValues;
     private static final double EPSILON = 0.0001;
