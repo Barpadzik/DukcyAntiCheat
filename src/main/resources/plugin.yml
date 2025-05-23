@@ -1,5 +1,5 @@
 name: DuckyAntiCheat
-version: '1.0'
+version: '1.0.1'
 main: pl.barpad.duckyanticheat.Main
 api-version: '1.16'
 load: POSTWORLD

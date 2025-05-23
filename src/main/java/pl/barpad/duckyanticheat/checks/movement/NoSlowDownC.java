@@ -1,11 +1,11 @@
 package pl.barpad.duckyanticheat.checks.movement;
 
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
@@ -13,33 +13,33 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import pl.barpad.duckyanticheat.Main;
 import pl.barpad.duckyanticheat.utils.DiscordHook;
+import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class NoSlowDownC implements Listener {
 
-    private final ViolationAlerts violationAlerts;
-    private final DiscordHook discordHook;
+    private final ViolationAlerts alerts;
+    private final DiscordHook discord;
     private final ConfigManager config;
+
+    private static final double EPSILON = 0.0001;
+
+    private final List<Double> ignoredSpeeds;
     private final Map<UUID, Location> lastLocations = new HashMap<>();
     private final Map<UUID, Long> ignoreUntil = new HashMap<>();
-    private final List<Double> ignoredSpeedValues;
-    private static final double EPSILON = 0.0001;
-    private final Map<UUID, Long> lastElytraFlight = new HashMap<>();
-    private final Map<UUID, Long> lastPlayerFlight = new HashMap<>();
+    private final Map<UUID, Long> lastElytra = new HashMap<>();
+    private final Map<UUID, Long> lastFlight = new HashMap<>();
     private final Map<UUID, Boolean> wasGliding = new HashMap<>();
     private final Map<UUID, Boolean> wasFlying = new HashMap<>();
 
-    public NoSlowDownC(Main plugin, ViolationAlerts violationAlerts, DiscordHook discordHook, ConfigManager config) {
-        this.violationAlerts = violationAlerts;
-        this.discordHook = discordHook;
+    public NoSlowDownC(Main plugin, ViolationAlerts alerts, DiscordHook discord, ConfigManager config) {
+        this.alerts = alerts;
+        this.discord = discord;
         this.config = config;
-        this.ignoredSpeedValues = config.getNoSlowDownCIgnoredSpeedValues();
+        this.ignoredSpeeds = config.getNoSlowDownCIgnoredSpeedValues();
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
@@ -47,7 +47,6 @@ public class NoSlowDownC implements Listener {
     public void onItemUse(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
-
         if (item.getType().isEdible()) {
             ignoreUntil.put(player.getUniqueId(), System.currentTimeMillis() + 1000);
         }
@@ -58,90 +57,76 @@ public class NoSlowDownC implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
+        if (PermissionBypass.hasBypass(player)) return;
         if (!config.isNoSlowDownCEnabled()) return;
-        if (!player.isOnline()) return;
-        if (player.isFlying()) return;
+        if (!player.isOnline() || player.isFlying()) return;
+        if (player.hasPermission("duckyac.bypass.noslowdown-c") || player.hasPermission("duckyac.bypass.noslowdown.*")) return;
 
-        if (player.hasPermission("duckyac.bypass") || player.hasPermission("duckyac.*") ||
-                player.hasPermission("duckyac.bypass.noslowdown-c") || player.hasPermission("duckyac.bypass.noslowdown.*")) {
+        // Elytra cooldown
+        boolean glidingNow = player.isGliding();
+        if (!glidingNow && wasGliding.getOrDefault(uuid, false)) {
+            lastElytra.put(uuid, System.currentTimeMillis());
+        }
+        wasGliding.put(uuid, glidingNow);
+        if (!glidingNow && lastElytra.containsKey(uuid) && System.currentTimeMillis() - lastElytra.get(uuid) < 1000) {
             return;
         }
 
-        boolean isCurrentlyGliding = player.isGliding();
-        boolean wasPreviouslyGliding = wasGliding.getOrDefault(uuid, false);
-        if (!isCurrentlyGliding && wasPreviouslyGliding) {
-            lastElytraFlight.put(uuid, System.currentTimeMillis());
+        // Flying cooldown
+        boolean flyingNow = player.isFlying();
+        if (!flyingNow && wasFlying.getOrDefault(uuid, false)) {
+            lastFlight.put(uuid, System.currentTimeMillis());
         }
-        wasGliding.put(uuid, isCurrentlyGliding);
-        if (!isCurrentlyGliding && lastElytraFlight.containsKey(uuid) &&
-                System.currentTimeMillis() - lastElytraFlight.get(uuid) < 1000) {
+        wasFlying.put(uuid, flyingNow);
+        if (!flyingNow && lastFlight.containsKey(uuid) && System.currentTimeMillis() - lastFlight.get(uuid) < 1000) {
             return;
         }
 
-        boolean isCurrentlyFlying = player.isFlying();
-        boolean wasPreviouslyFlying = wasFlying.getOrDefault(uuid, false);
-        if (!isCurrentlyFlying && wasPreviouslyFlying) {
-            lastPlayerFlight.put(uuid, System.currentTimeMillis());
+        // Check if charging crossbow
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (hand.getType() != Material.CROSSBOW || !player.isHandRaised()) return;
+
+        // Movement calculations
+        Location curr = player.getLocation();
+        Location prev = lastLocations.getOrDefault(uuid, curr);
+        double dist = curr.toVector().distance(prev.toVector());
+        lastLocations.put(uuid, curr.clone());
+
+        if (Math.abs(curr.getY() - prev.getY()) > 0.001) return;
+
+        for (double ignored : ignoredSpeeds) {
+            if (Math.abs(dist - ignored) < EPSILON) return;
         }
-        wasFlying.put(uuid, isCurrentlyFlying);
-        if (!isCurrentlyFlying && lastPlayerFlight.containsKey(uuid) &&
-                System.currentTimeMillis() - lastPlayerFlight.get(uuid) < 1000) {
-            return;
-        }
 
-        ItemStack item = player.getInventory().getItemInMainHand();
-        if (item.getType() != Material.CROSSBOW || !player.isHandRaised()) return;
-
-        Location current = player.getLocation();
-        Location previous = lastLocations.getOrDefault(uuid, current);
-        double distance = current.toVector().distance(previous.toVector());
-        lastLocations.put(uuid, current.clone());
-
-        if (Math.abs(current.getY() - previous.getY()) > 0.001) return;
-
-        double adjustedMaxSpeed = config.getNoSlowDownCMaxSpeed();
-        double maxIgnoreSpeed = config.getNoSlowDownCMaxIgnoreSpeed();
-        boolean debugMode = config.isNoSlowDownCDebugMode();
-        boolean cancelEvent = config.shouldNoSlowDownCCancelEvent();
-        int maxAlerts = config.getMaxNoSlowDownCAlerts();
-        String punishCommand = config.getNoSlowDownCCommand();
-
+        double maxSpeed = config.getNoSlowDownCMaxSpeed();
         PotionEffect speed = player.getPotionEffect(PotionEffectType.SPEED);
         if (speed != null) {
-            int level = speed.getAmplifier() + 1;
-            adjustedMaxSpeed *= (1.0 + level * 0.2);
+            maxSpeed *= 1.0 + (speed.getAmplifier() + 1) * 0.2;
         }
 
-        Material belowType = player.getLocation().subtract(0, 1, 0).getBlock().getType();
-        if (belowType == Material.ICE || belowType == Material.PACKED_ICE || belowType == Material.BLUE_ICE) return;
+        Material ground = curr.subtract(0, 1, 0).getBlock().getType();
+        if (ground == Material.ICE || ground == Material.PACKED_ICE || ground == Material.BLUE_ICE) return;
 
-        for (double ignored : ignoredSpeedValues) {
-            if (Math.abs(distance - ignored) < EPSILON) {
-                return;
-            }
+        if (dist > config.getNoSlowDownCMaxIgnoreSpeed()) return;
+        if (dist <= maxSpeed) return;
+
+        alerts.reportViolation(player.getName(), "NoSlowDownC");
+        int vl = alerts.getViolationCount(player.getName(), "NoSlowDownC");
+
+        if (config.isNoSlowDownCDebugMode()) {
+            Bukkit.getLogger().info("[DuckyAntiCheat] (NoSlowDownC Debug) " + player.getName()
+                    + " moved too fast while charging crossbow: " + String.format("%.4f", dist)
+                    + " (allowed: " + String.format("%.4f", maxSpeed) + ") (VL: " + vl + ")");
         }
 
-        if (distance > maxIgnoreSpeed) return;
+        if (config.shouldNoSlowDownCCancelEvent()) {
+            player.teleport(prev);
+        }
 
-        if (distance > adjustedMaxSpeed) {
-            violationAlerts.reportViolation(player.getName(), "NoSlowDownC");
-            int vl = violationAlerts.getViolationCount(player.getName(), "NoSlowDownC");
-
-            if (debugMode) {
-                Bukkit.getLogger().info("[DuckyAntiCheat] (NoSlowDownC Debug) " + player.getName()
-                        + " moved too fast while charging a crossbow: "
-                        + String.format("%.4f", distance) + " (allowed: "
-                        + String.format("%.4f", adjustedMaxSpeed) + ") (VL: " + vl + ")");
-            }
-
-            if (cancelEvent) {
-                player.teleport(previous);
-            }
-
-            if (vl >= maxAlerts) {
-                violationAlerts.executePunishment(player.getName(), "NoSlowDownC", punishCommand);
-                discordHook.sendPunishmentCommand(player.getName(), punishCommand);
-            }
+        if (vl >= config.getMaxNoSlowDownCAlerts()) {
+            String cmd = config.getNoSlowDownCCommand();
+            alerts.executePunishment(player.getName(), "NoSlowDownC", cmd);
+            discord.sendPunishmentCommand(player.getName(), cmd);
         }
     }
 }

@@ -13,23 +13,23 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import pl.barpad.duckyanticheat.Main;
 import pl.barpad.duckyanticheat.utils.DiscordHook;
+import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class NoSlowDownD implements Listener {
+
+    private static final double EPSILON = 0.0001;
 
     private final ViolationAlerts violationAlerts;
     private final DiscordHook discordHook;
     private final ConfigManager config;
+    private final List<Double> ignoredSpeedValues;
+
     private final Map<UUID, Location> lastLocations = new HashMap<>();
     private final Map<UUID, Long> ignoreUntil = new HashMap<>();
-    private final List<Double> ignoredSpeedValues;
-    private static final double EPSILON = 0.0001;
     private final Map<UUID, Long> lastElytraFlight = new HashMap<>();
     private final Map<UUID, Long> lastPlayerFlight = new HashMap<>();
     private final Map<UUID, Boolean> wasGliding = new HashMap<>();
@@ -48,6 +48,7 @@ public class NoSlowDownD implements Listener {
         Player player = event.getPlayer();
         ItemStack item = player.getInventory().getItemInMainHand();
 
+        // Ignore movement checks for 1 second after eating
         if (item.getType().isEdible()) {
             ignoreUntil.put(player.getUniqueId(), System.currentTimeMillis() + 1000);
         }
@@ -56,88 +57,79 @@ public class NoSlowDownD implements Listener {
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
 
+        // Skip if player has bypass permission or check is disabled
+        if (PermissionBypass.hasBypass(player)) return;
         if (!config.isNoSlowDownDEnabled()) return;
         if (!player.isOnline()) return;
         if (player.isFlying()) return;
         if (!player.isBlocking()) return;
+        if (player.hasPermission("duckyac.bypass.noslowdown-d") || player.hasPermission("duckyac.bypass.noslowdown.*")) return;
 
-        if (player.hasPermission("duckyac.bypass") ||
-                player.hasPermission("duckyac.*") ||
-                player.hasPermission("duckyac.bypass.noslowdown-d") ||
-                player.hasPermission("duckyac.bypass.noslowdown.*")) {
+        // Elytra gliding cooldown
+        boolean isGliding = player.isGliding();
+        boolean wasGlidingBefore = wasGliding.getOrDefault(uuid, false);
+        if (!isGliding && wasGlidingBefore) {
+            lastElytraFlight.put(uuid, System.currentTimeMillis());
+        }
+        wasGliding.put(uuid, isGliding);
+        if (!isGliding && lastElytraFlight.containsKey(uuid) &&
+                System.currentTimeMillis() - lastElytraFlight.get(uuid) < 1000) {
             return;
         }
 
-        UUID uuid = player.getUniqueId();
-
-        boolean isCurrentlyGliding = player.isGliding();
-        boolean wasPreviouslyGliding = wasGliding.getOrDefault(uuid, false);
-
-        if (!isCurrentlyGliding && wasPreviouslyGliding) {
-            lastElytraFlight.put(uuid, System.currentTimeMillis());
-        }
-
-        wasGliding.put(uuid, isCurrentlyGliding);
-
-        if (!player.isGliding() && lastElytraFlight.containsKey(uuid)) {
-            if (System.currentTimeMillis() - lastElytraFlight.get(uuid) < 1000) {
-                return;
-            }
-        }
-
-        boolean isCurrentlyFlying = player.isFlying();
-        boolean wasPreviouslyFlying = wasFlying.getOrDefault(uuid, false);
-
-        if (!isCurrentlyFlying && wasPreviouslyFlying) {
+        // Flying cooldown
+        boolean isFlying = player.isFlying();
+        boolean wasFlyingBefore = wasFlying.getOrDefault(uuid, false);
+        if (!isFlying && wasFlyingBefore) {
             lastPlayerFlight.put(uuid, System.currentTimeMillis());
         }
-
-        wasFlying.put(uuid, isCurrentlyFlying);
-
-        if (!player.isFlying() && lastPlayerFlight.containsKey(uuid)) {
-            if (System.currentTimeMillis() - lastPlayerFlight.get(uuid) < 1000) {
-                return;
-            }
+        wasFlying.put(uuid, isFlying);
+        if (!isFlying && lastPlayerFlight.containsKey(uuid) &&
+                System.currentTimeMillis() - lastPlayerFlight.get(uuid) < 1000) {
+            return;
         }
 
+        // Only check players holding a shield
         ItemStack mainHand = player.getInventory().getItemInMainHand();
         ItemStack offHand = player.getInventory().getItemInOffHand();
         if (mainHand.getType() != Material.SHIELD && offHand.getType() != Material.SHIELD) return;
 
+        // Measure movement distance
         Location current = player.getLocation();
         Location previous = lastLocations.getOrDefault(uuid, current);
         double distance = current.toVector().distance(previous.toVector());
         lastLocations.put(uuid, current.clone());
 
+        // Ignore vertical movement
         if (Math.abs(current.getY() - previous.getY()) > 0.001) return;
 
-        double adjustedMaxSpeed = config.getNoSlowDownDMaxSpeed();
-
+        // Skip values configured to be ignored
         for (double ignored : ignoredSpeedValues) {
-            if (Math.abs(distance - ignored) < EPSILON) {
-                return;
-            }
+            if (Math.abs(distance - ignored) < EPSILON) return;
         }
 
+        // Apply speed effect multiplier
+        double adjustedMaxSpeed = config.getNoSlowDownDMaxSpeed();
         PotionEffect speed = player.getPotionEffect(PotionEffectType.SPEED);
         if (speed != null) {
-            int level = speed.getAmplifier() + 1;
-            adjustedMaxSpeed *= (1.0 + level * 0.2);
+            adjustedMaxSpeed *= 1.0 + (speed.getAmplifier() + 1) * 0.2;
         }
 
-        Location below = player.getLocation().subtract(0, 1, 0);
-        Material belowType = below.getBlock().getType();
-        if (belowType == Material.ICE || belowType == Material.PACKED_ICE || belowType == Material.BLUE_ICE) {
-            return;
-        }
+        // Ignore players walking on ice
+        Material below = player.getLocation().subtract(0, 1, 0).getBlock().getType();
+        if (below == Material.ICE || below == Material.PACKED_ICE || below == Material.BLUE_ICE) return;
 
+        // Ignore abnormal movement jumps (likely caused by lag or teleport)
         if (distance > config.getNoSlowDownDMaxIgnoreSpeed()) return;
 
+        // Trigger violation if speed is too high
         if (distance > adjustedMaxSpeed) {
             violationAlerts.reportViolation(player.getName(), "NoSlowDownD");
             int vl = violationAlerts.getViolationCount(player.getName(), "NoSlowDownD");
 
+            // Debug output to console
             if (config.isNoSlowDownDDebugMode()) {
                 Bukkit.getLogger().info("[DuckyAntiCheat] (NoSlowDownD Debug) " + player.getName()
                         + " moved too fast while blocking with shield: "
@@ -145,10 +137,12 @@ public class NoSlowDownD implements Listener {
                         + String.format("%.4f", adjustedMaxSpeed) + ") (VL: " + vl + ")");
             }
 
+            // Cancel movement by teleporting back
             if (config.shouldNoSlowDownDCancelEvent()) {
                 player.teleport(previous);
             }
 
+            // Execute punishment if violation level is too high
             if (vl >= config.getMaxNoSlowDownDAlerts()) {
                 String cmd = config.getNoSlowDownDCommand();
                 violationAlerts.executePunishment(player.getName(), "NoSlowDownD", cmd);

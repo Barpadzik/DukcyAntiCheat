@@ -13,6 +13,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import pl.barpad.duckyanticheat.Main;
 import pl.barpad.duckyanticheat.utils.DiscordHook;
+import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
@@ -26,13 +27,14 @@ public class NoSlowDownB implements Listener {
 
     private final Map<UUID, Location> lastLocations = new HashMap<>();
     private final Map<UUID, Long> ignoreUntil = new HashMap<>();
-    private final List<Double> ignoredSpeeds;
-    private static final double EPSILON = 0.0001;
 
     private final Map<UUID, Long> lastElytra = new HashMap<>();
     private final Map<UUID, Long> lastFlight = new HashMap<>();
     private final Map<UUID, Boolean> wasGliding = new HashMap<>();
     private final Map<UUID, Boolean> wasFlying = new HashMap<>();
+
+    private final List<Double> ignoredSpeeds;
+    private static final double EPSILON = 0.0001;
 
     public NoSlowDownB(Main plugin, ViolationAlerts alerts, DiscordHook discord, ConfigManager config) {
         this.alerts = alerts;
@@ -42,6 +44,7 @@ public class NoSlowDownB implements Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
+    // Track when the player uses an edible item to grant temporary immunity
     @EventHandler
     public void onItemUse(PlayerInteractEvent event) {
         ItemStack item = event.getPlayer().getInventory().getItemInMainHand();
@@ -50,67 +53,87 @@ public class NoSlowDownB implements Listener {
         }
     }
 
+    // Main movement check triggered on every player movement
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
-        Player p = event.getPlayer();
-        UUID uuid = p.getUniqueId();
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
 
-        if (!config.isNoSlowDownBEnabled() || !p.isOnline() || p.isFlying() || !p.isHandRaised()) return;
-        if (p.hasPermission("duckyac.bypass") || p.hasPermission("duckyac.*") || p.hasPermission("duckyac.bypass.noslowdown-b") || p.hasPermission("duckyac.bypass.noslowdown.*")) return;
+        // Skip check if player has bypass permission or certain conditions are not met
+        if (PermissionBypass.hasBypass(player)) return;
+        if (!config.isNoSlowDownBEnabled() || !player.isOnline() || player.isFlying() || !player.isHandRaised()) return;
+        if (player.hasPermission("duckyac.bypass.noslowdown-b") || player.hasPermission("duckyac.bypass.noslowdown.*")) return;
 
-        boolean glidingNow = p.isGliding();
-        if (!glidingNow && wasGliding.getOrDefault(uuid, false)) lastElytra.put(uuid, System.currentTimeMillis());
+        // Elytra gliding tracking with delay immunity
+        boolean glidingNow = player.isGliding();
+        if (!glidingNow && wasGliding.getOrDefault(uuid, false)) {
+            lastElytra.put(uuid, System.currentTimeMillis());
+        }
         wasGliding.put(uuid, glidingNow);
         if (!glidingNow && lastElytra.containsKey(uuid) && System.currentTimeMillis() - lastElytra.get(uuid) < 1000) return;
 
-        boolean flyingNow = p.isFlying();
-        if (!flyingNow && wasFlying.getOrDefault(uuid, false)) lastFlight.put(uuid, System.currentTimeMillis());
+        // Creative flight tracking with delay immunity
+        boolean flyingNow = player.isFlying();
+        if (!flyingNow && wasFlying.getOrDefault(uuid, false)) {
+            lastFlight.put(uuid, System.currentTimeMillis());
+        }
         wasFlying.put(uuid, flyingNow);
         if (!flyingNow && lastFlight.containsKey(uuid) && System.currentTimeMillis() - lastFlight.get(uuid) < 1000) return;
 
-        ItemStack hand = p.getInventory().getItemInMainHand();
+        // Only trigger when holding a bow
+        ItemStack hand = player.getInventory().getItemInMainHand();
         if (hand.getType() != Material.BOW) return;
 
-        Location curr = p.getLocation();
+        // Calculate horizontal movement distance
+        Location curr = player.getLocation();
         Location prev = lastLocations.getOrDefault(uuid, curr);
         double dist = curr.toVector().distance(prev.toVector());
         lastLocations.put(uuid, curr.clone());
 
+        // Skip if player is moving vertically
         if (Math.abs(curr.getY() - prev.getY()) > 0.001) return;
 
+        // Ignore movement if distance matches any configured exempt values
         for (double ignored : ignoredSpeeds) {
             if (Math.abs(dist - ignored) < EPSILON) return;
         }
 
+        // Adjust max allowed speed based on potion effect
         double maxSpeed = config.getNoSlowDownBMaxBowSpeed();
-        PotionEffect speed = p.getPotionEffect(PotionEffectType.SPEED);
+        PotionEffect speed = player.getPotionEffect(PotionEffectType.SPEED);
         if (speed != null) {
             maxSpeed *= 1.0 + (speed.getAmplifier() + 1) * 0.2;
         }
 
-        Material ground = p.getLocation().subtract(0, 1, 0).getBlock().getType();
+        // Ignore if player is on ice
+        Material ground = player.getLocation().subtract(0, 1, 0).getBlock().getType();
         if (ground == Material.ICE || ground == Material.PACKED_ICE || ground == Material.BLUE_ICE) return;
 
+        // Skip if distance exceeds max ignore threshold or is under allowed speed
         if (dist > config.getNoSlowDownBMaxIgnoreSpeed()) return;
         if (dist <= maxSpeed) return;
 
-        alerts.reportViolation(p.getName(), "NoSlowDownB");
-        int vl = alerts.getViolationCount(p.getName(), "NoSlowDownB");
+        // Player exceeded speed while pulling bow → flag violation
+        alerts.reportViolation(player.getName(), "NoSlowDownB");
+        int vl = alerts.getViolationCount(player.getName(), "NoSlowDownB");
 
+        // Debug message for admins
         if (config.isNoSlowDownBDebugMode()) {
-            Bukkit.getLogger().info("[DuckyAntiCheat] (NoSlowDownB Debug) " + p.getName()
+            Bukkit.getLogger().info("[DuckyAntiCheat] (NoSlowDownB Debug) " + player.getName()
                     + " moved too fast with bow drawn: " + String.format("%.4f", dist)
                     + " (allowed: " + String.format("%.4f", maxSpeed) + ") (VL: " + vl + ")");
         }
 
+        // Optionally cancel movement by teleporting the player back
         if (config.shouldNoSlowDownBCancelEvent()) {
-            p.teleport(prev);
+            player.teleport(prev);
         }
 
+        // Execute punishment if violation level exceeds threshold
         if (vl >= config.getMaxNoSlowDownBAlerts()) {
             String cmd = config.getNoSlowDownBCommand();
-            alerts.executePunishment(p.getName(), "NoSlowDownB", cmd);
-            discord.sendPunishmentCommand(p.getName(), cmd);
+            alerts.executePunishment(player.getName(), "NoSlowDownB", cmd);
+            discord.sendPunishmentCommand(player.getName(), cmd);
         }
     }
 }

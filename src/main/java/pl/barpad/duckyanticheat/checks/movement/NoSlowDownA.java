@@ -13,6 +13,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import pl.barpad.duckyanticheat.Main;
 import pl.barpad.duckyanticheat.utils.DiscordHook;
+import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
@@ -26,15 +27,17 @@ public class NoSlowDownA implements Listener {
     private final ViolationAlerts violationAlerts;
     private final DiscordHook discordHook;
     private final ConfigManager config;
+
     private final Map<UUID, Location> lastLocations = new HashMap<>();
     private final Map<UUID, Long> ignoreUntil = new HashMap<>();
-    private final List<Double> ignoredSpeedValues;
-    private static final double EPSILON = 0.0001;
     private final Map<UUID, Long> immunityUntil = new HashMap<>();
     private final Map<UUID, Long> lastElytraFlight = new HashMap<>();
     private final Map<UUID, Long> lastPlayerFlight = new HashMap<>();
     private final Map<UUID, Boolean> wasGliding = new HashMap<>();
     private final Map<UUID, Boolean> wasFlying = new HashMap<>();
+
+    private final List<Double> ignoredSpeedValues;
+    private static final double EPSILON = 0.0001;
 
     public NoSlowDownA(Main plugin, ViolationAlerts violationAlerts, DiscordHook discordHook, ConfigManager config) {
         this.violationAlerts = violationAlerts;
@@ -44,6 +47,10 @@ public class NoSlowDownA implements Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
     }
 
+    /**
+     * Called when player interacts (e.g., eats food).
+     * Temporarily ignores movement checks for 1 second.
+     */
     @EventHandler
     public void onItemUse(PlayerInteractEvent event) {
         Player player = event.getPlayer();
@@ -54,92 +61,85 @@ public class NoSlowDownA implements Listener {
         }
     }
 
+    /**
+     * Called on player movement to check if the player is moving too fast while eating.
+     */
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-
-        if (!config.isNoSlowDownAEnabled()) return;
-        if (!player.isOnline()) return;
-        if (player.isFlying()) return;
-        if (!player.isHandRaised()) return;
-        if (!isEating(player)) return;
-
-        if (player.hasPermission("duckyac.bypass") ||
-                player.hasPermission("duckyac.*") ||
-                player.hasPermission("duckyac.bypass.noslowdown-a") ||
-                player.hasPermission("duckyac.bypass.noslowdown.*")) {
-            return;
-        }
-
-        if (immunityUntil.containsKey(player.getUniqueId())) {
-            long immunityTime = immunityUntil.get(player.getUniqueId());
-            if (System.currentTimeMillis() < immunityTime) {
-                return;
-            }
-            immunityUntil.remove(player.getUniqueId());
-        }
-
         UUID uuid = player.getUniqueId();
 
+        // Skip checks for bypass players or disabled config
+        if (!config.isNoSlowDownAEnabled() || !player.isOnline() || PermissionBypass.hasBypass(player)) return;
+        if (player.hasPermission("duckyac.bypass.noslowdown-a") || player.hasPermission("duckyac.bypass.noslowdown.*")) return;
+
+        // Skip if not eating
+        if (!player.isHandRaised() || !isEating(player)) return;
+
+        // Immunity time (e.g. after Elytra/flying)
+        if (immunityUntil.containsKey(uuid) && System.currentTimeMillis() < immunityUntil.get(uuid)) {
+            return;
+        } else {
+            immunityUntil.remove(uuid);
+        }
+
+        // Handle Elytra and gliding immunity
         boolean isCurrentlyGliding = player.isGliding();
         boolean wasPreviouslyGliding = wasGliding.getOrDefault(uuid, false);
 
         if (!isCurrentlyGliding && wasPreviouslyGliding) {
             lastElytraFlight.put(uuid, System.currentTimeMillis());
         }
-
         wasGliding.put(uuid, isCurrentlyGliding);
 
         if (!player.isGliding() && lastElytraFlight.containsKey(uuid)) {
-            if (System.currentTimeMillis() - lastElytraFlight.get(uuid) < 1000) {
-                return;
-            }
+            if (System.currentTimeMillis() - lastElytraFlight.get(uuid) < 1000) return;
         }
 
+        // Handle flying immunity
         boolean isCurrentlyFlying = player.isFlying();
         boolean wasPreviouslyFlying = wasFlying.getOrDefault(uuid, false);
 
         if (!isCurrentlyFlying && wasPreviouslyFlying) {
             lastPlayerFlight.put(uuid, System.currentTimeMillis());
         }
-
         wasFlying.put(uuid, isCurrentlyFlying);
 
         if (!player.isFlying() && lastPlayerFlight.containsKey(uuid)) {
-            if (System.currentTimeMillis() - lastPlayerFlight.get(uuid) < 1000) {
-                return;
-            }
+            if (System.currentTimeMillis() - lastPlayerFlight.get(uuid) < 1000) return;
         }
 
+        // Movement distance calculation
         Location currentLoc = player.getLocation();
-        Location lastLoc = lastLocations.getOrDefault(player.getUniqueId(), currentLoc);
+        Location lastLoc = lastLocations.getOrDefault(uuid, currentLoc);
         double distance = currentLoc.toVector().distance(lastLoc.toVector());
-        lastLocations.put(player.getUniqueId(), currentLoc.clone());
 
+        lastLocations.put(uuid, currentLoc.clone());
+
+        // Skip if Y-axis movement is too large
         if (Math.abs(currentLoc.getY() - lastLoc.getY()) > 0.001) return;
 
+        // Check against max speed
         double adjustedMaxSpeed = config.getNoSlowDownAMaxEatingSpeed();
-
         if (distance > config.getNoSlowDownAMaxIgnoreSpeed()) return;
 
+        // Skip if speed is in ignored values
         for (double ignored : ignoredSpeedValues) {
-            if (Math.abs(distance - ignored) < EPSILON) {
-                return;
-            }
+            if (Math.abs(distance - ignored) < EPSILON) return;
         }
 
+        // Adjust for speed potion effects
         PotionEffect speedEffect = player.getPotionEffect(PotionEffectType.SPEED);
         if (speedEffect != null) {
             int amplifier = speedEffect.getAmplifier() + 1;
             adjustedMaxSpeed *= (1.0 + amplifier * 0.2);
         }
 
-        Location below = player.getLocation().subtract(0, 1, 0);
-        Material belowType = below.getBlock().getType();
-        if (belowType == Material.ICE || belowType == Material.PACKED_ICE || belowType == Material.BLUE_ICE) {
-            return;
-        }
+        // Ignore if standing on ice
+        Material belowType = player.getLocation().subtract(0, 1, 0).getBlock().getType();
+        if (belowType == Material.ICE || belowType == Material.PACKED_ICE || belowType == Material.BLUE_ICE) return;
 
+        // Player is too fast while eating
         if (distance > adjustedMaxSpeed) {
             violationAlerts.reportViolation(player.getName(), "NoSlowDownA");
             int vl = violationAlerts.getViolationCount(player.getName(), "NoSlowDownA");
@@ -151,7 +151,7 @@ public class NoSlowDownA implements Listener {
             }
 
             if (config.shouldNoSlowDownACancelEvent()) {
-                player.teleport(lastLoc);
+                player.teleport(lastLoc); // Cancel movement
             }
 
             if (vl >= config.getMaxNoSlowDownAAlerts()) {
@@ -162,8 +162,12 @@ public class NoSlowDownA implements Listener {
         }
     }
 
+    /**
+     * Checks if the player is currently eating.
+     */
     private boolean isEating(Player player) {
         if (!player.isHandRaised()) return false;
-        return player.getInventory().getItemInMainHand().getType().isEdible();
+        ItemStack item = player.getInventory().getItemInMainHand();
+        return item.getType().isEdible();
     }
 }

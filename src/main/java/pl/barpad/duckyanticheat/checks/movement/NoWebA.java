@@ -9,6 +9,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 import pl.barpad.duckyanticheat.Main;
 import pl.barpad.duckyanticheat.utils.DiscordHook;
+import pl.barpad.duckyanticheat.utils.PermissionBypass;
 import pl.barpad.duckyanticheat.utils.ViolationAlerts;
 import pl.barpad.duckyanticheat.utils.managers.ConfigManager;
 
@@ -37,14 +38,16 @@ public class NoWebA implements Listener {
 
         Player player = event.getPlayer();
 
+        if (PermissionBypass.hasBypass(player)) return;
+
+        if (player.hasPermission("duckyac.bypass.noweb-a")) {
+            return;
+        }
+
         if (player.getAllowFlight() || player.isInsideVehicle()) {
             if (config.isNoWebADebugMode()) {
                 Bukkit.getLogger().info("[NoWebA] " + player.getName() + " can fly or is in vehicle - skipping");
             }
-            return;
-        }
-
-        if (player.hasPermission("duckyac.bypass") || player.hasPermission("duckyac.*") || player.hasPermission("duckyac.bypass.noweb-a")) {
             return;
         }
 

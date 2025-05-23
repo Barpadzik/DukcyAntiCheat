@@ -175,6 +175,6 @@ public class ViolationAlerts {
     }
 
     private String color(String message) {
-        return message == null ? "" : message.replace("&", "ยง");
+        return message == null ? "" : message.replace("&", "§");
     }
 }
