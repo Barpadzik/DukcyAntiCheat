@@ -2,6 +2,7 @@ package pl.barpad.duckyanticheat.checks.place;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -64,6 +65,9 @@ public class InvalidPlaceA implements Listener {
         // Bypass players with global or specific permission
         if (PermissionBypass.hasBypass(player)) return;
         if (player.hasPermission("duckyac.bypass.invalidplace-a")) return;
+
+        Block headBlock = player.getEyeLocation().getBlock();
+        if (headBlock.getType() == Material.COBWEB || headBlock.getType() == Material.KELP) return;
 
         Block block = event.getBlockPlaced();
 

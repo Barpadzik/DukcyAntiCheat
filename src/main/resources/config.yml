@@ -165,7 +165,7 @@ fast-place:
   command: "kick %player% Too fast block placement (FastPlaceA)"
   debug: false
 
-# === DUCKYANTICHEAT MESSAGES ===
+# === DUCKY ANTI CHEAT MESSAGES ===
 
 # === VIOLATION ALERTS ===
 alert-message: "&d&lDuckyAC &8» &fPlayer &7»&f %player% &7»&6 %check% &7(&c%vl%VL&7)"
