@@ -44,7 +44,7 @@ public class ElytraAimA implements Listener {
     @EventHandler
     public void onFireworkUse(PlayerInteractEvent event) {
         // Exit if the check is disabled in config
-        if (!config.isElytraAimAEnabled()) return;
+        if (config.isElytraAimAEnabled()) return;
 
         Player player = event.getPlayer();
         ItemStack item = event.getItem();

@@ -68,7 +68,7 @@ public class ConfigManager {
     // === ELYTRA AIM A ===
 
     public boolean isElytraAimAEnabled() {
-        return !config.getBoolean("elytra-aim-a.enabled", true);
+        return config.getBoolean("elytra-aim-a.enabled", true);
     }
 
     public boolean isElytraAimACancelEvent() {
