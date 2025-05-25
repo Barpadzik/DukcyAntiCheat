@@ -98,21 +98,29 @@ public class ThruBlocksA implements Listener {
                 event.setCancelled(true);
             }
 
-            // Report violation
-            violationAlerts.reportViolation(attacker.getName(), "ThruBlocksA");
-            int vl = violationAlerts.getViolationCount(attacker.getName(), "ThruBlocksA");
+            // Report a violation and retrieve the updated violation level (VL)
+            int vl = violationAlerts.reportViolation(attacker.getName(), "ThruBlocksA"); // <- Returns the new VL after incrementing
 
-            // Debug log output
+            // If debug mode is enabled, log detailed info to the console
             if (config.isThruBlocksDebugMode()) {
                 Bukkit.getLogger().info("[DuckyAntiCheat] (ThruBlocksA Debug) " + attacker.getName() +
                         " hit through a block (VL: " + vl + ")");
             }
 
-            // Execute punishment if violation count exceeds threshold
+            // If the violation level has reached or exceeded the configured maximum, execute punishment
             if (vl >= config.getMaxThruBlocksAlerts()) {
-                String cmd = config.getThruBlocksCommand();
+                String cmd = config.getThruBlocksCommand(); // Get the punishment command from config
+
+                // Execute the punishment command on the player
                 violationAlerts.executePunishment(attacker.getName(), "ThruBlocksA", cmd);
+
+                // Send the punishment info to Discord (if applicable)
                 discordHook.sendPunishmentCommand(attacker.getName(), cmd);
+
+                // Log punishment execution if debug mode is enabled
+                if (config.isThruBlocksDebugMode()) {
+                    Bukkit.getLogger().info("[DuckyAntiCheat] (ThruBlocksA Debug) Punishment executed for " + attacker.getName());
+                }
             }
         }
     }
