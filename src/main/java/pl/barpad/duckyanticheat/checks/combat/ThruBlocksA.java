@@ -108,6 +108,7 @@ public class ThruBlocksA implements Listener {
             }
 
             // If the violation level has reached or exceeded the configured maximum, execute punishment
+            violationAlerts.getViolationCount(attacker.getName(), "ThruBlocksA");
             if (vl >= config.getMaxThruBlocksAlerts()) {
                 String cmd = config.getThruBlocksCommand(); // Get the punishment command from config
 
@@ -116,6 +117,9 @@ public class ThruBlocksA implements Listener {
 
                 // Send the punishment info to Discord (if applicable)
                 discordHook.sendPunishmentCommand(attacker.getName(), cmd);
+
+                // Clear user Violations after command has been executed
+                violationAlerts.clearPlayerViolations(attacker.getName());
 
                 // Log punishment execution if debug mode is enabled
                 if (config.isThruBlocksDebugMode()) {
