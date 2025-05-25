@@ -103,8 +103,21 @@ public class ThruBlocksA implements Listener {
 
             // If debug mode is enabled, log detailed info to the console
             if (config.isThruBlocksDebugMode()) {
-                Bukkit.getLogger().info("[DuckyAntiCheat] (ThruBlocksA Debug) " + attacker.getName() +
-                        " hit through a block (VL: " + vl + ")");
+                Location loc = attacker.getLocation();
+                float yaw = loc.getYaw();
+                float pitch = loc.getPitch();
+
+                Block targetBlock = attacker.getTargetBlockExact(5); // Get the block the player is looking at, up to 5 blocks away
+                String targetBlockInfo = (targetBlock != null)
+                        ? targetBlock.getType() + " at " + targetBlock.getLocation().getBlockX() + ", "
+                        + targetBlock.getLocation().getBlockY() + ", " + targetBlock.getLocation().getBlockZ()
+                        : "None";
+
+                Bukkit.getLogger().info("[DuckyAntiCheat] (ThruBlocksA Debug) " + attacker.getName()
+                        + " hit through a block (VL: " + vl + ")");
+                Bukkit.getLogger().info("[DuckyAntiCheat] (ThruBlocksA Debug) Location: X=" + loc.getX()
+                        + " Y=" + loc.getY() + " Z=" + loc.getZ() + " | Yaw=" + yaw + " Pitch=" + pitch);
+                Bukkit.getLogger().info("[DuckyAntiCheat] (ThruBlocksA Debug) Looking at block: " + targetBlockInfo);
             }
 
             // If the violation level has reached or exceeded the configured maximum, execute punishment
