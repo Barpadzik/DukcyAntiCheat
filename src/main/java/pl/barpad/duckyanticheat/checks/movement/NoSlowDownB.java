@@ -61,6 +61,10 @@ public class NoSlowDownB implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
+        if (ignoreUntil.containsKey(uuid) && System.currentTimeMillis() < ignoreUntil.get(uuid)) {
+            return;
+        }
+
         // Skip check if player has bypass permission or certain conditions are not met
         if (PermissionBypass.hasBypass(player)) return;
         if (!config.isNoSlowDownBEnabled() || !player.isOnline() || player.isFlying() || !player.isHandRaised()) return;

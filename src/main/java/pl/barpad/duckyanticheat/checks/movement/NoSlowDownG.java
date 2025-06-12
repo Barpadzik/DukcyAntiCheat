@@ -42,6 +42,8 @@ public class NoSlowDownG implements Listener {
     // Keep previous flying state to detect when player stops flying
     private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
 
+    private final ConcurrentHashMap<UUID, Long> sneakStart = new ConcurrentHashMap<>();
+
     // Blocks to ignore speed checks on (ice variants)
     private final Set<Material> ignoredBlocks = EnumSet.of(
             Material.ICE, Material.PACKED_ICE, Material.BLUE_ICE, Material.FROSTED_ICE
@@ -93,8 +95,25 @@ public class NoSlowDownG implements Listener {
             if (System.currentTimeMillis() - lastPlayerFlight.get(uuid) < 1000) return;
         }
 
+        if (player.isSneaking()) {
+            // Record the crouch start time if it doesn't already exist
+            sneakStart.putIfAbsent(uuid, System.currentTimeMillis());
+
+            // Check if 500 ms has passed since you started crouching
+            if (System.currentTimeMillis() - sneakStart.get(uuid) < 500L) return;
+        } else {
+            // If player stops crouching, clear the recorded time
+            sneakStart.remove(uuid);
+        }
+
         // Only check when player is sneaking and on the ground
-        if (!player.isSneaking()) return;
+        if (!player.isSneaking()) {
+            sneakStart.remove(uuid);
+            return;
+        } else {
+            sneakStart.putIfAbsent(uuid, System.currentTimeMillis());
+            if (System.currentTimeMillis() - sneakStart.get(uuid) < 500L) return;
+        }
         if (!player.isOnGround()) return;
 
         // Ignore creative and spectator mode players

@@ -36,6 +36,7 @@ public class NoSlowDownC implements Listener {
     private final ConcurrentHashMap<UUID, Long> lastFlight = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> handRaiseStart = new ConcurrentHashMap<>();
 
     public NoSlowDownC(Main plugin, ViolationAlerts alerts, DiscordHook discord, ConfigManager config) {
         this.alerts = alerts;
@@ -86,7 +87,19 @@ public class NoSlowDownC implements Listener {
 
         // Check if charging crossbow
         ItemStack hand = player.getInventory().getItemInMainHand();
-        if (hand.getType() != Material.CROSSBOW || !player.isHandRaised()) return;
+
+        if (hand.getType() != Material.CROSSBOW || !player.isHandRaised()) {
+            handRaiseStart.remove(uuid); // reset if no longer holding the crossbow
+            return;
+        }
+
+        // If the player has just started loading the crossbow, note the time
+        handRaiseStart.putIfAbsent(uuid, System.currentTimeMillis());
+
+        // Please wait at least 500ms after starting to charge
+        if (System.currentTimeMillis() - handRaiseStart.get(uuid) < 500) {
+            return;
+        }
 
         // Movement calculations
         Location curr = player.getLocation();

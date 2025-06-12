@@ -34,6 +34,7 @@ public class NoSlowDownA implements Listener {
     private final ConcurrentHashMap<UUID, Long> lastPlayerFlight = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Long> eatingStartTime = new ConcurrentHashMap<>();
 
     private final List<Double> ignoredSpeedValues;
     private static final double EPSILON = 0.0001;
@@ -56,7 +57,9 @@ public class NoSlowDownA implements Listener {
         ItemStack item = player.getInventory().getItemInMainHand();
 
         if (item.getType().isEdible()) {
-            ignoreUntil.put(player.getUniqueId(), System.currentTimeMillis() + 1000);
+            UUID uuid = player.getUniqueId();
+            ignoreUntil.put(uuid, System.currentTimeMillis() + 1000);
+            eatingStartTime.put(uuid, System.currentTimeMillis());
         }
     }
 
@@ -67,6 +70,11 @@ public class NoSlowDownA implements Listener {
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
+
+        Long start = eatingStartTime.get(uuid);
+        if (start == null || System.currentTimeMillis() - start < 500) {
+            return;
+        }
 
         // Skip checks for bypass players or disabled config
         if (!config.isNoSlowDownAEnabled() || !player.isOnline() || PermissionBypass.hasBypass(player)) return;
