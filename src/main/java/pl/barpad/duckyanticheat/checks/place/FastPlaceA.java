@@ -46,7 +46,7 @@ public class FastPlaceA implements Listener {
         Bukkit.getPluginManager().registerEvents(this, plugin);
 
         // Schedule task to clear place counts every 20 ticks (1 second)
-        Bukkit.getScheduler().runTaskTimer(plugin, placeCounts::clear, 20L, 20L);
+        Bukkit.getScheduler().runTaskTimer(plugin, placeCounts::clear, 1L, 1L);
     }
 
     /**
@@ -90,7 +90,7 @@ public class FastPlaceA implements Listener {
             // If debug mode is enabled, log info about the violation
             if (config.isFastPlaceADebugMode()) {
                 Bukkit.getLogger().info("[DuckyAntiCheat] (FastPlaceA Debug) " + player.getName()
-                        + " placed " + placed + " blocks/sec (VL: " + vl + ")");
+                        + " placed " + placed + " blocks/tick (VL: " + vl + ")");
             }
 
             // If violation level reaches the configured max, execute punishment command
