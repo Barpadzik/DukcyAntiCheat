@@ -175,7 +175,7 @@ discord:
   enabled: false
   discord-webhook-url: "https://discord.com/api/webhooks/your-webhook-id"
   username: "DuckyAntiCheat"
-  avatar-url: "https://i.imgur.com/wPfoYdI.png"
+  avatar-url: "https://i.imgur.com/ahbEPVO.png"
   violation-message-template: "**AntiCheatSystem**\nPlayer: **%player%**\nCheck: **%check%**\nViolation: **%vl%**"
   punishment-message-template: "**Punishment Executed**\nPlayer: **%player%**\nCommand: `%command%`"
 
