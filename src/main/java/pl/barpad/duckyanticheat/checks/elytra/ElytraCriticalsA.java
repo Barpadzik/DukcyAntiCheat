@@ -89,16 +89,16 @@ public class ElytraCriticalsA implements Listener {
                             config.getElytraCriticalsACriticalHitsRequired() + ")");
                 }
             } else {
-                // Reset count if current hit is not critical
+                // Reset count if the current hit is not critical
                 playerCriticalHits.put(playerName, 0);
             }
 
-            // Check if player reached required consecutive critical hits threshold
+            // Check if player reached the required consecutive critical hits threshold
             if (playerCriticalHits.getOrDefault(playerName, 0) >= config.getElytraCriticalsACriticalHitsRequired()) {
                 // Increment pending violation reports count
                 pendingViolations.put(playerName, pendingViolations.getOrDefault(playerName, 0) + 1);
 
-                // If player has 2 or more pending violations, report violation
+                // If a player has 2 or more pending violations, report violation
                 if (pendingViolations.get(playerName) >= 2) {
                     violationAlerts.reportViolation(playerName, "ElytraCriticalsA");
                     int vl = violationAlerts.getViolationCount(playerName, "ElytraCriticalsA");
