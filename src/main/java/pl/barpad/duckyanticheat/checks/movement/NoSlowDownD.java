@@ -23,18 +23,30 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class NoSlowDownD implements Listener {
 
-    private static final double EPSILON = 0.0001;
-
     private final ViolationAlerts violationAlerts;
     private final DiscordHook discordHook;
     private final ConfigManager config;
     private final List<Double> ignoredSpeedValues;
 
+    // Small constant used to compare floating point values with precision
+    private static final double EPSILON = 0.0001;
+
+    // Stores the player's last known location to measure distance moved
     private final ConcurrentHashMap<UUID, Location> lastLocations = new ConcurrentHashMap<>();
+
+    // Tracks until when a player should be ignored after eating an item
     private final ConcurrentHashMap<UUID, Long> ignoreUntil = new ConcurrentHashMap<>();
+
+    // Tracks timestamp of last elytra gliding to apply cooldown
     private final ConcurrentHashMap<UUID, Long> lastElytraFlight = new ConcurrentHashMap<>();
+
+    // Tracks timestamp of last creative flight to apply cooldown
     private final ConcurrentHashMap<UUID, Long> lastPlayerFlight = new ConcurrentHashMap<>();
+
+    // Tracks whether the player was gliding in the previous tick
     private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
+
+    // Tracks whether the player was flying in the previous tick
     private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
 
     public NoSlowDownD(Main plugin, ViolationAlerts violationAlerts, DiscordHook discordHook, ConfigManager config) {
@@ -65,7 +77,7 @@ public class NoSlowDownD implements Listener {
             return;
         }
 
-        // Skip if player has bypass permission or check is disabled
+        // Skip if the player has bypass permission or check is disabled
         if (PermissionBypass.hasBypass(player)) return;
         if (!config.isNoSlowDownDEnabled()) return;
         if (!player.isOnline()) return;

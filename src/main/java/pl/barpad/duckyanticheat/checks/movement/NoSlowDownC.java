@@ -27,15 +27,31 @@ public class NoSlowDownC implements Listener {
     private final DiscordHook discord;
     private final ConfigManager config;
 
+    // Small constant used to compare floating point distances
     private static final double EPSILON = 0.0001;
 
+    // List of specific speed values to ignore during movement check
     private final List<Double> ignoredSpeeds;
+
+    // Stores the last known location of each player for movement delta calculations
     private final ConcurrentHashMap<UUID, Location> lastLocations = new ConcurrentHashMap<>();
+
+    // Tracks until when a player should be ignored after using an edible item
     private final ConcurrentHashMap<UUID, Long> ignoreUntil = new ConcurrentHashMap<>();
+
+    // Timestamp of the last elytra gliding for each player
     private final ConcurrentHashMap<UUID, Long> lastElytra = new ConcurrentHashMap<>();
+
+    // Timestamp of the last creative flight for each player
     private final ConcurrentHashMap<UUID, Long> lastFlight = new ConcurrentHashMap<>();
+
+    // Tracks whether the player was gliding in the previous tick
     private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
+
+    // Tracks whether the player was flying in the previous tick
     private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
+
+    // Tracks when a player started charging a crossbow
     private final ConcurrentHashMap<UUID, Long> handRaiseStart = new ConcurrentHashMap<>();
 
     public NoSlowDownC(Main plugin, ViolationAlerts alerts, DiscordHook discord, ConfigManager config) {

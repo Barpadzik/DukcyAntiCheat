@@ -79,7 +79,7 @@ public class FastPlaceA implements Listener {
 
         // If the player placed more blocks than allowed per second, trigger violation
         if (placed > maxAllowed) {
-            // Report the violation and get current violation level (VL)
+            // Report the violation and get the current violation level (VL)
             int vl = alerts.reportViolation(player.getName(), "FastPlaceA");
 
             // Cancel the event if configured to prevent block placement

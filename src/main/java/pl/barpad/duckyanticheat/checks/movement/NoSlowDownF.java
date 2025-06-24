@@ -27,12 +27,22 @@ public class NoSlowDownF implements Listener {
     private final DiscordHook discord;
     private final ConfigManager config;
 
-    // Maps for tracking player states
+    // Stores the timestamp of the last check for a given player to limit how often violations are processed
     private final ConcurrentHashMap<UUID, Long> lastCheck = new ConcurrentHashMap<>();
+
+    // Stores the last known location of a player to calculate movement speed between movement events
     private final ConcurrentHashMap<UUID, Location> lastLocations = new ConcurrentHashMap<>();
+
+    // Stores the timestamp when the player last stopped gliding with an elytra, used to ignore movement checks immediately after gliding
     private final ConcurrentHashMap<UUID, Long> lastElytraFlight = new ConcurrentHashMap<>();
+
+    // Stores the timestamp when the player last stopped flying (e.g. creative mode), used to ignore checks immediately after switching from flight
     private final ConcurrentHashMap<UUID, Long> lastPlayerFlight = new ConcurrentHashMap<>();
+
+    // Tracks whether the player was gliding with an elytra in the previous movement event, used to detect transitions from gliding to walking
     private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
+
+    // Tracks whether the player was flying in the previous movement event, used to detect transitions from flight to ground movement
     private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
 
     public NoSlowDownF(Plugin plugin, ViolationAlerts alerts, DiscordHook discord, ConfigManager config) {

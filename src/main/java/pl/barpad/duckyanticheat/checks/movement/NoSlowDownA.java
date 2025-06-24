@@ -27,16 +27,33 @@ public class NoSlowDownA implements Listener {
     private final DiscordHook discordHook;
     private final ConfigManager config;
 
+    // Maps player's UUID to their last known location
     private final ConcurrentHashMap<UUID, Location> lastLocations = new ConcurrentHashMap<>();
+
+    // Maps UUIDs to timestamps indicating until when movement checks should be ignored (e.g. just started eating)
     private final ConcurrentHashMap<UUID, Long> ignoreUntil = new ConcurrentHashMap<>();
+
+    // Maps UUIDs to timestamps indicating immunity from checks (e.g. after gliding or flying)
     private final ConcurrentHashMap<UUID, Long> immunityUntil = new ConcurrentHashMap<>();
+
+    // Tracks when the player last stopped gliding with elytra
     private final ConcurrentHashMap<UUID, Long> lastElytraFlight = new ConcurrentHashMap<>();
+
+    // Tracks when the player last stopped creative/survival flying
     private final ConcurrentHashMap<UUID, Long> lastPlayerFlight = new ConcurrentHashMap<>();
+
+    // Stores whether a player was gliding in the previous tick
     private final ConcurrentHashMap<UUID, Boolean> wasGliding = new ConcurrentHashMap<>();
+
+    // Stores whether a player was flying in the previous tick
     private final ConcurrentHashMap<UUID, Boolean> wasFlying = new ConcurrentHashMap<>();
+
+    // Tracks when a player started eating
     private final ConcurrentHashMap<UUID, Long> eatingStartTime = new ConcurrentHashMap<>();
 
+    // Speed values that are ignored by the check (configured in config.yml)
     private final List<Double> ignoredSpeedValues;
+
     private static final double EPSILON = 0.0001;
 
     public NoSlowDownA(Main plugin, ViolationAlerts violationAlerts, DiscordHook discordHook, ConfigManager config) {
@@ -48,8 +65,8 @@ public class NoSlowDownA implements Listener {
     }
 
     /**
-     * Called when player interacts (e.g., eats food).
-     * Temporarily ignores movement checks for 1 second.
+     * Called when player interacts (e.g., uses an edible item like food).
+     * Temporarily disables speed checks to avoid false positives when beginning to eat.
      */
     @EventHandler
     public void onItemUse(PlayerInteractEvent event) {
@@ -58,95 +75,92 @@ public class NoSlowDownA implements Listener {
 
         if (item.getType().isEdible()) {
             UUID uuid = player.getUniqueId();
-            ignoreUntil.put(uuid, System.currentTimeMillis() + 1000);
-            eatingStartTime.put(uuid, System.currentTimeMillis());
+            ignoreUntil.put(uuid, System.currentTimeMillis() + 1000); // ignore checks for 1 second
+            eatingStartTime.put(uuid, System.currentTimeMillis());    // track when eating started
         }
     }
 
     /**
-     * Called on player movement to check if the player is moving too fast while eating.
+     * Called on every movement to check if a player is moving unusually fast while eating.
      */
     @EventHandler
     public void onMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
+        // Ignore if player started eating less than 0.5s ago
         Long start = eatingStartTime.get(uuid);
-        if (start == null || System.currentTimeMillis() - start < 500) {
-            return;
-        }
+        if (start == null || System.currentTimeMillis() - start < 500) return;
 
-        // Skip checks for bypass players or disabled config
+        // Skip if feature is disabled, player is offline, or has bypass permission
         if (!config.isNoSlowDownAEnabled() || !player.isOnline() || PermissionBypass.hasBypass(player)) return;
         if (player.hasPermission("duckyac.bypass.noslowdown-a") || player.hasPermission("duckyac.bypass.noslowdown.*")) return;
 
-        // Skip if not eating
+        // Skip if not actively eating
         if (!player.isHandRaised() || !isEating(player)) return;
 
-        // Immunity time (e.g. after Elytra/flying)
-        if (immunityUntil.containsKey(uuid) && System.currentTimeMillis() < immunityUntil.get(uuid)) {
-            return;
-        } else {
-            immunityUntil.remove(uuid);
-        }
+        // Temporary immunity after gliding or flying
+        if (immunityUntil.containsKey(uuid) && System.currentTimeMillis() < immunityUntil.get(uuid)) return;
+        else immunityUntil.remove(uuid);
 
-        // Handle Elytra and gliding immunity
+        // Track transitions from gliding (Elytra)
         boolean isCurrentlyGliding = player.isGliding();
         boolean wasPreviouslyGliding = wasGliding.getOrDefault(uuid, false);
-
         if (!isCurrentlyGliding && wasPreviouslyGliding) {
             lastElytraFlight.put(uuid, System.currentTimeMillis());
         }
         wasGliding.put(uuid, isCurrentlyGliding);
 
+        // Skip if recently finished gliding
         if (!player.isGliding() && lastElytraFlight.containsKey(uuid)) {
             if (System.currentTimeMillis() - lastElytraFlight.get(uuid) < 1000) return;
         }
 
-        // Handle flying immunity
+        // Track transitions from flying (creative/survival)
         boolean isCurrentlyFlying = player.isFlying();
         boolean wasPreviouslyFlying = wasFlying.getOrDefault(uuid, false);
-
         if (!isCurrentlyFlying && wasPreviouslyFlying) {
             lastPlayerFlight.put(uuid, System.currentTimeMillis());
         }
         wasFlying.put(uuid, isCurrentlyFlying);
 
+        // Skip if recently finished flying
         if (!player.isFlying() && lastPlayerFlight.containsKey(uuid)) {
             if (System.currentTimeMillis() - lastPlayerFlight.get(uuid) < 1000) return;
         }
 
-        // Movement distance calculation
+        // Calculate horizontal distance moved since last tick
         Location currentLoc = player.getLocation();
         Location lastLoc = lastLocations.getOrDefault(uuid, currentLoc);
         double distance = currentLoc.toVector().distance(lastLoc.toVector());
 
-        lastLocations.put(uuid, currentLoc.clone());
+        lastLocations.put(uuid, currentLoc.clone()); // Save current location for next tick
 
-        // Skip if Y-axis movement is too large
+        // Skip if there was notable vertical movement (e.g., falling or jumping)
         if (Math.abs(currentLoc.getY() - lastLoc.getY()) > 0.001) return;
 
-        // Check against max speed
         double adjustedMaxSpeed = config.getNoSlowDownAMaxEatingSpeed();
+
+        // Skip if speed is above a max threshold to avoid false positives
         if (distance > config.getNoSlowDownAMaxIgnoreSpeed()) return;
 
-        // Skip if speed is in ignored values
+        // Skip if the current speed is among ignored values
         for (double ignored : ignoredSpeedValues) {
             if (Math.abs(distance - ignored) < EPSILON) return;
         }
 
-        // Adjust for speed potion effects
+        // Account for Speed potion effects
         PotionEffect speedEffect = player.getPotionEffect(PotionEffectType.SPEED);
         if (speedEffect != null) {
             int amplifier = speedEffect.getAmplifier() + 1;
             adjustedMaxSpeed *= (1.0 + amplifier * 0.2);
         }
 
-        // Ignore if standing on ice
+        // Ignore if standing on ice-type block
         Material belowType = player.getLocation().subtract(0, 1, 0).getBlock().getType();
         if (belowType == Material.ICE || belowType == Material.PACKED_ICE || belowType == Material.BLUE_ICE) return;
 
-        // Player is too fast while eating
+        // Player is moving too fast while eating — possible NoSlowDown cheat
         if (distance > adjustedMaxSpeed) {
             violationAlerts.reportViolation(player.getName(), "NoSlowDownA");
             int vl = violationAlerts.getViolationCount(player.getName(), "NoSlowDownA");
@@ -157,10 +171,12 @@ public class NoSlowDownA implements Listener {
                         + " (allowed: " + String.format("%.4f", adjustedMaxSpeed) + ") (VL: " + vl + ")");
             }
 
+            // Optionally cancel movement by teleporting back
             if (config.shouldNoSlowDownACancelEvent()) {
-                player.teleport(lastLoc); // Cancel movement
+                player.teleport(lastLoc);
             }
 
+            // Execute punishment if a violation threshold exceeded
             if (vl >= config.getMaxNoSlowDownAAlerts()) {
                 String cmd = config.getNoSlowDownACommand();
                 violationAlerts.executePunishment(player.getName(), "NoSlowDownA", cmd);
@@ -170,7 +186,7 @@ public class NoSlowDownA implements Listener {
     }
 
     /**
-     * Checks if the player is currently eating.
+     * Utility method to determine if the player is eating.
      */
     private boolean isEating(Player player) {
         if (!player.isHandRaised()) return false;

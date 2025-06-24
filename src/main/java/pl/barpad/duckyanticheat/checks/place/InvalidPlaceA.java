@@ -71,7 +71,7 @@ public class InvalidPlaceA implements Listener {
 
         Block block = event.getBlockPlaced();
 
-        // Calculate vector from player's eye location to center of placed block
+        // Calculate vector from player's eye location to a center of placed block
         Location eyeLoc = player.getEyeLocation();
         Vector directionToBlock = block.getLocation().add(0.5, 0.5, 0.5).toVector()
                 .subtract(eyeLoc.toVector()).normalize();
@@ -79,14 +79,14 @@ public class InvalidPlaceA implements Listener {
         // Get player's looking direction vector normalized
         Vector lookDirection = eyeLoc.getDirection().normalize();
 
-        // Calculate the angle in degrees between looking direction and block direction
+        // Calculate the angle in degrees between a looking direction and block a direction
         double angle = Math.toDegrees(directionToBlock.angle(lookDirection));
 
-        // If angle exceeds configured threshold, treat as suspicious placement
+        // If an angle exceeds a configured threshold, treat as suspicious placement
         if (angle > config.getInvalidPlaceAThreshold()) {
             String name = player.getName();
 
-            // Increase count of invalid placements for this player
+            // Increase the count of invalid placements for this player
             placeViolations.put(name, placeViolations.getOrDefault(name, 0) + 1);
 
             // Cancel the block place event if configured
@@ -99,7 +99,7 @@ public class InvalidPlaceA implements Listener {
                 violationAlerts.reportViolation(name, "InvalidPlaceA");
                 int vl = violationAlerts.getViolationCount(name, "InvalidPlaceA");
 
-                // If violation level exceeds max allowed, execute punishment
+                // If the violation level exceeds max allowed, execute punishment
                 if (vl >= config.getMaxInvalidPlaceAAlerts()) {
                     String command = config.getInvalidPlaceACommand();
                     violationAlerts.executePunishment(name, "InvalidPlaceA", command);
