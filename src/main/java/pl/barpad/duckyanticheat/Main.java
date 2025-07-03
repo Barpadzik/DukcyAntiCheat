@@ -9,6 +9,9 @@ import pl.barpad.duckyanticheat.checks.place.FastPlaceA;
 import pl.barpad.duckyanticheat.checks.place.InvalidPlaceA;
 import pl.barpad.duckyanticheat.checks.elytra.ElytraCriticalsA;
 import pl.barpad.duckyanticheat.checks.player.AutoTotemA;
+import pl.barpad.duckyanticheat.checks.player.TimerA;
+import pl.barpad.duckyanticheat.checks.player.TimerB;
+import pl.barpad.duckyanticheat.checks.player.TimerC;
 import pl.barpad.duckyanticheat.command.Reload;
 import pl.barpad.duckyanticheat.utils.MetricsLite;
 import pl.barpad.duckyanticheat.utils.UpdateChecker;
@@ -80,6 +83,9 @@ public final class Main extends JavaPlugin {
         registerCheck(new InvalidPlaceA(this, violationAlerts, discordHook, configManager));
         registerCheck(new FastPlaceA(this, violationAlerts, discordHook, configManager));
         registerCheck(new AutoTotemA(this, violationAlerts, discordHook, configManager));
+        registerCheck(new TimerA(this, violationAlerts, discordHook, configManager));
+        registerCheck(new TimerB(this, violationAlerts, discordHook, configManager));
+        registerCheck(new TimerC(this, violationAlerts, discordHook, configManager));
 
         getLogger().info("Registered " + registeredChecks.size() + " anti-cheat checks");
     }

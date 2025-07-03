@@ -165,6 +165,33 @@ fast-place:
   command: "kick %player% Too fast block placement (FastPlaceA)"
   debug: false
 
+# === TIMER A === // Beta Check !
+timer-a:
+  enabled: true
+  cancel-event: true
+  max-packets-per-second: 24
+  max-alerts: 10
+  command: "kick %player% You send too many packets (TimerA)"
+  debug: false # Danger! This may cause lags with bigger amount of players!
+
+# === TIMER B === // Beta Check !
+timer-b:
+  enabled: true
+  cancel-event: true
+  max-packets-per-second: 24
+  max-alerts: 10
+  command: "kick %player% You send too many packets (TimerB)"
+  debug: false # Danger! This may cause lags with bigger amount of players!
+
+# === TIMER C === // Beta Check !
+timer-c:
+  enabled: true
+  cancel-event: true
+  max-packets-per-second: 24
+  max-alerts: 10
+  command: "kick %player% You send too many packets (TimerC)"
+  debug: false # Danger! This may cause lags with bigger amount of players!
+
 # === DUCKY ANTI CHEAT MESSAGES ===
 
 # === VIOLATION ALERTS ===

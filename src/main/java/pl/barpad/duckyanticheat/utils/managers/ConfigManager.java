@@ -444,4 +444,83 @@ public class ConfigManager {
     public boolean isAutoTotemADebugMode() {
         return config.getBoolean("auto-totem-a.debug", false);
     }
+
+    // === TIMER A ===
+
+    public boolean isTimerAEnabled() {
+        return config.getBoolean("timer-a.enabled", true);
+    }
+
+    public boolean isTimerACancelEvents() {
+        return plugin.getConfig().getBoolean("timer-a.cancel-event", true);
+    }
+
+    public int getMaxPacketsPerSecondA() {
+        return plugin.getConfig().getInt("timer-a.max-packets-per-second", 24);
+    }
+
+    public int getMaxTimerAAlerts() {
+        return config.getInt("timer-a.max-alerts", 10);
+    }
+
+    public String getTimerACommand() {
+        return config.getString("timer-a.command", "kick %player% You send too many packets (TimerA)");
+    }
+
+    public boolean isTimerADebugMode() {
+        return plugin.getConfig().getBoolean("timer-a.debug", false);
+    }
+
+    // === TIMER B ===
+
+    public boolean isTimerBEnabled() {
+        return config.getBoolean("timer-b.enabled", true);
+    }
+
+    public boolean isTimerBCancelEvents() {
+        return plugin.getConfig().getBoolean("timer-b.cancel-event", true);
+    }
+
+    public int getMaxPacketsPerSecondB() {
+        return plugin.getConfig().getInt("timer-b.max-packets-per-second", 20);
+    }
+
+    public int getMaxTimerBAlerts() {
+        return config.getInt("timer-b.max-alerts", 10);
+    }
+
+    public String getTimerBCommand() {
+        return config.getString("timer-b.command", "kick %player% You send too many packets (TimerB)");
+    }
+
+    public boolean isTimerBDebugMode() {
+        return plugin.getConfig().getBoolean("timer-b.debug", false);
+    }
+
+    // === TIMER C ===
+
+    public boolean isTimerCEnabled() {
+        return config.getBoolean("timer-c.enabled", true);
+    }
+
+    public boolean isTimerCCancelEvents() {
+        return plugin.getConfig().getBoolean("timer-c.cancel-event", true);
+    }
+
+    public int getMaxPacketsPerSecondC() {
+        return plugin.getConfig().getInt("timer-c.max-packets-per-second", 20);
+    }
+
+    public int getMaxTimerCAlerts() {
+        return config.getInt("timer-c.max-alerts", 10);
+    }
+
+    public String getTimerCCommand() {
+        return config.getString("timer-c.command", "kick %player% You send too many packets (TimerC)");
+    }
+
+    public boolean isTimerCDebugMode() {
+        return plugin.getConfig().getBoolean("timer-c.debug", false);
+    }
+
 }
