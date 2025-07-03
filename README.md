@@ -18,6 +18,7 @@ It detects unnatural player behavior in block placing, movement, and other inter
   - `NoSlowDownA-G`: Many features of the player walking too fast during certain activities
   - `NoWebA`: Detects player movement that is too fast while in a web
   - `ThruBlocksA`: Detects when a player hits another player through a wall
+  - `TimerA-C`: Detects when a player sends too many packets
 - 📉 Violation Level (VL) system for tracking repeated offenses
 - 🔧 Fully configurable thresholds, punishments, and enabled checks
 - 🛡 Permission-based bypass support (e.g., for admins)
@@ -33,15 +34,22 @@ It detects unnatural player behavior in block placing, movement, and other inter
 ```yaml
 # === DUCKY ANTICHEAT CONFIGURATION ===
 
+# Time after which violations reset for the player
+# How it works:
+# Player is reported let's say 2 times for check ElytraAimA
+# After the default 300 seconds or 5 minutes his violations will reset to 0
+
+alert-timeout: 300
+
 # === AUTO TOTEM A ===
 auto-totem-a:
   enabled: true
   min-delay: 150 # minimum allowed swap interval in ms
-  max-alerts: 3
   tick-interval: 3
   max-ping: -1
-  debug: true
+  max-alerts: 5
   command: "kick %player% Too fast totem swap (AutoTotemA)"
+  debug: false
 
 # === ELYTRA AIM A ===
 elytra-aim-a:
@@ -190,6 +198,57 @@ fast-place:
   max-alerts: 3
   command: "kick %player% Too fast block placement (FastPlaceA)"
   debug: false
+
+# === TIMER A === // Beta Check !
+timer-a:
+  enabled: true
+  cancel-event: true
+  max-packets-per-second: 24
+  max-alerts: 10
+  command: "kick %player% You send too many packets (TimerA)"
+  debug: false # Danger! This may cause lags with bigger amount of players!
+
+# === TIMER B === // Beta Check !
+timer-b:
+  enabled: true
+  cancel-event: true
+  max-packets-per-second: 24
+  max-alerts: 10
+  command: "kick %player% You send too many packets (TimerB)"
+  debug: false # Danger! This may cause lags with bigger amount of players!
+
+# === TIMER C === // Beta Check !
+timer-c:
+  enabled: true
+  cancel-event: true
+  max-packets-per-second: 24
+  max-alerts: 10
+  command: "kick %player% You send too many packets (TimerC)"
+  debug: false # Danger! This may cause lags with bigger amount of players!
+
+# === DUCKY ANTI CHEAT MESSAGES ===
+
+# === VIOLATION ALERTS ===
+alert-message: "&d&lDuckyAC &8» &fPlayer &7»&f %player% &7»&6 %check% &7(&c%vl%VL&7)"
+
+# === DISCORD TEMPLATES ===
+discord:
+  enabled: false
+  discord-webhook-url: "https://discord.com/api/webhooks/your-webhook-id"
+  username: "DuckyAntiCheat"
+  avatar-url: "https://i.imgur.com/ahbEPVO.png"
+  violation-message-template: "**AntiCheatSystem**\nPlayer: **%player%**\nCheck: **%check%**\nViolation: **%vl%**"
+  punishment-message-template: "**Punishment Executed**\nPlayer: **%player%**\nCommand: `%command%`"
+
+# === MISC ===
+no-permission: "&d&lDuckyAC &8» &cNo Permission!"
+incorrect-usage: '&d&lDuckyAC &8» &cUsage: /duckyac reload'
+update-available: "&d&lDuckyAC &8» &eA new version is available: &c%version%"
+update-download: "&d&lDuckyAC &8» &eDownload: &a%url%"
+update-check-failed: "&d&lDuckyAC &8» &cCould not check for updates."
+player-only: "&d&lDuckyAC &8» &cOnly Players can use this command."
+config-reloaded: '&d&lDuckyAC &8» &aConfiguration reloaded.'
+plugin-reloaded: '&d&lDuckyAC &8» &aPlugin successfully reloaded.'
 ```
 
 ---
