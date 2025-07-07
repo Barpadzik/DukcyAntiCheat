@@ -523,4 +523,56 @@ public class ConfigManager {
         return plugin.getConfig().getBoolean("timer-c.debug", false);
     }
 
+    // === TIMER D ===
+
+    public boolean isTimerDEnabled() {
+        return config.getBoolean("timer-d.enabled", true);
+    }
+
+    public boolean isTimerDCancelEvents() {
+        return plugin.getConfig().getBoolean("timer-d.cancel-event", true);
+    }
+
+    public int getMaxPacketsPerSecondD() {
+        return plugin.getConfig().getInt("timer-d.max-packets-per-second", 30);
+    }
+
+    public int getMaxTimerDAlerts() {
+        return config.getInt("timer-d.max-alerts", 10);
+    }
+
+    public String getTimerDCommand() {
+        return config.getString("timer-d.command", "kick %player% You send too many packets (TimerD)");
+    }
+
+    public boolean isTimerDDebugMode() {
+        return plugin.getConfig().getBoolean("timer-d.debug", false);
+    }
+
+    // === FAST CLIMB A ===
+
+    public boolean isFastClimbAEnabled() {
+        return config.getBoolean("fast-climb-a.enabled", true);
+    }
+
+    public boolean isFastClimbACancelEvents() {
+        return plugin.getConfig().getBoolean("fast-climb-a.cancel-event", true);
+    }
+
+    public double getFastClimbAMaxSpeed() {
+        return plugin.getConfig().getDouble("fast-climb-a.max-climb-speed", 0.15);
+    }
+
+    public int getMaxFastClimbAAlerts() {
+        return config.getInt("fast-climb-a.max-alerts", 5);
+    }
+
+    public String getFastClimbACommand() {
+        return config.getString("fast-climb-a.command", "kick %player% You send too many packets (TimerD)");
+    }
+
+    public boolean isFastClimbADebugMode() {
+        return plugin.getConfig().getBoolean("fast-climb-a.debug", false);
+    }
+
 }
