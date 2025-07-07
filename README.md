@@ -13,12 +13,13 @@ It detects unnatural player behavior in block placing, movement, and other inter
   - `AutoTotemA`: Detects suspicious totem planting (beta check)
   - `ElytraAimA`: Player was detected to be hitting too fast while flying an elytra
   - `ElytraCriticalsA`: Detects when a player deals too much critical damage while flying an elytra in too short a time
+  - `FastClimbA`: Detects to fast player climbing on ladder, vines etc.
   - `FastPlaceA`: Detects when a player places too many blocks at a time
   - `InvalidPlaceA`: Detects when a player has placed a block at the wrong angle
   - `NoSlowDownA-G`: Many features of the player walking too fast during certain activities
   - `NoWebA`: Detects player movement that is too fast while in a web
   - `ThruBlocksA`: Detects when a player hits another player through a wall
-  - `TimerA-C`: Detects when a player sends too many packets
+  - `TimerA-D`: Detects when a player sends too many packets
 - 📉 Violation Level (VL) system for tracking repeated offenses
 - 🔧 Fully configurable thresholds, punishments, and enabled checks
 - 🛡 Permission-based bypass support (e.g., for admins)
